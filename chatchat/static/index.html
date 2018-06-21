@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div id="app">
+    <div id="content">
+      <div class="chat_with">
+        {{currentUser}},
+        in {{currentRoom}}
+      </div>
+      <pre class="chat_content">
+        {{chatContent.join()}}
+      </pre>
+    </div>
+    <div id="user_input">
+      <input type="text" placeholder="请输入..." v-model="userInput" />
+      <button @click="submit">发送</button>
+    </div>
+    <div id="sidebar">
+      房间列表：
+      <ul v-for="room in roomList">
+        <li @click="chooseRoom(room)">{{room}}</li>
+      </ul>
+    </div>
+  </div>
+</body>
+<script src="https://cdn.bootcss.com/socket.io/2.1.1/socket.io.slim.js"></script>
+<script src="https://cdn.bootcss.com/vue/2.5.16/vue.min.js"></script>
+<script src="https://cdn.bootcss.com/axios/0.18.0/axios.min.js"></script>
+<script>
+  var socket = io.connect('http://127.0.0.1:8080')  // 因为nodejs跟websocket服务绑定在了一起，共用一个端口
+  // console.log(socket)
+  var vm = new Vue({
+    el: '#app',
+    data () {
+      return {
+        defaultRoom: 'Guest',
+        currentRoom: 'Guest',
+        roomList: ['Guest'],  // 用户列表
+        currentUser: 'admin',  // 当前用户
+        chatContent: ['\nwelcome to chatroom beta version.'], // 聊天内容
+        userInput: '' // 用户输入
+      }
+    },
+    created () {
+      this.initSocket()
+      // console.log(axios)
+      // axios.get('https://dribbble.com/shots/4633983-Jam-Sesh?utm_source=gold_browser_extension')
+      //   .then(function (response) {
+      //     console.log(response);
+      //   })
+      //   .catch(function (error) {
+      //     console.log(error);
+      //   });
+    },
+    methods: {
+      // 初始化socketIO
+      initSocket () {
+        var self = this
+        socket.on('nameResult', function (result) {
+          var message
+          if (result.success) {
+            message = `You are now know as ${result.name}.`
+          } else {
+            message = result.message
+          }
+        })
+        socket.on('joinResult', function (result) {
+          console.log('2. 加入房间 ', result.room)
+          self.$data.currentRoom = result.room
+        })
+        socket.on('message', function (message) {
+          self.$data.chatContent.push(`\n${message.text}`)
+        })
+        socket.on('rooms', function (rooms) {
+          self.$data.currentRoom = ''
+        })
+      },
+      // 选择房间
+      chooseRoom (room) {
+        console.log(room)
+      },
+      // 发送信息
+      sendMessage (room, text) {
+        var message = {
+          room: room,
+          text: text
+        }
+        socket.emit('message', message)
+      },
+      // 改变房间
+      changeRoom (room) {
+        socket.emit('join', {
+          newRoom: room
+        })
+      },
+      // 执行命令
+      processCMD (cmd) {
+        var words = cmd.split(' ')
+        var commad = words[0].substring(1, words[0].length).toLowerCase()
+        var message = false
+        switch (commad) {
+          case 'join':
+            words.shift()
+            var room = words.join(' ')
+            this.changeRoom(room)
+            break
+          case 'nick':
+            words.shift()
+            var name = words.join(' ')
+            socket.emit('nameAttempt', name)
+            break
+          default:
+            message = '未知命令'
+            break
+        }
+        return message
+      },
+      submit: function () {
+        var userInput = this.$data.userInput
+        if (userInput.charAt(0) === '/') {
+          // 以'/'作为开头则是命令
+          this.processCMD(userInput)
+        } else {
+          // 无符号则是聊天信息
+          this.sendMessage(this.$data.defaultRoom, userInput)
+        }
+        this.$data.userInput = '' // 提交后输入框清零
+      }
+    }
+  })
+</script>
+</html>
