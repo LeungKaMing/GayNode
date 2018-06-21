@@ -48,7 +48,9 @@ const server = http.createServer((req, res) => {
   }
   filePath = `../static${filePath}`
   isCache(res, cache, filePath)
+    
 })
+
 server.listen(8080, () => {
   console.log('监听8080端口')
 })
