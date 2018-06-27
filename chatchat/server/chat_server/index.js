@@ -59,7 +59,7 @@ function joinRoom (socket, room) {
 }
 
 /**
- * 3. 处理用户改名需求
+ * 3. 处理用户改名需求 ok
  * - 用户不能改成以Guest_开头的
  * - 用户不能改成跟已有昵称重复的
  */
@@ -85,7 +85,6 @@ function handleNameChangeAttempts (socket, nickNames, namesUsed) {
           success: true,
           name
         })
-        console.log(currentRoom[socket.id], 'watch it')
         socket.broadcast.to(currentRoom[socket.id]).emit('message', {
           text: `${oldName} is now known as ${name}.`
         })
@@ -100,12 +99,16 @@ function handleNameChangeAttempts (socket, nickNames, namesUsed) {
   })
 }
 
-// 4. 统一处理用户发送的信息
+// 4. 统一处理用户发送的信息 ok
 function handleMessageBroadcasting (socket, nickNames) {
-  socket.on('message', (message) => {
-    console.log(message, 'check message')
+  socket.on('sendSMS', (message) => {
+    // 广播除自身以外的人能看到
     socket.broadcast.to(message.room).emit('message', {
-      text: `${nickNames[socket.id]}: ${message.text}`
+      text: `${nickNames[socket.id].name}: ${message.text}`
+    })
+    // 广播自身能看到
+    socket.emit('message', {
+      text: `${nickNames[socket.id].name}: ${message.text}`
     })
   })
 }
