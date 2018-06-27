@@ -34,7 +34,7 @@
 <script src="https://cdn.bootcss.com/vue/2.5.16/vue.min.js"></script>
 <script src="https://cdn.bootcss.com/axios/0.18.0/axios.min.js"></script>
 <script>
-  var socket = io.connect('http://127.0.0.1:8080')  // 因为nodejs跟websocket服务绑定在了一起，共用一个端口
+  var socket = io.connect('http://127.0.0.1:8081')  // 因为nodejs跟websocket服务绑定在了一起，共用一个端口
   // console.log(socket)
   var vm = new Vue({
     el: '#app',
@@ -44,7 +44,7 @@
         currentRoom: 'Guest',
         roomList: ['Guest'],  // 用户列表
         currentUser: 'admin',  // 当前用户
-        chatContent: ['\nwelcome to chatroom beta version.'], // 聊天内容
+        chatContent: ['\nwelcome to chatroom beta version'], // 聊天内容
         userInput: '' // 用户输入
       }
     },
@@ -64,15 +64,16 @@
       initSocket () {
         var self = this
         socket.on('nameResult', function (result) {
+          console.log('改名成功：', result)
           var message
           if (result.success) {
             message = `You are now know as ${result.name}.`
           } else {
             message = result.message
           }
+          self.$data.chatContent.push(`\n${message}`)
         })
         socket.on('joinResult', function (result) {
-          console.log('2. 加入房间 ', result.room)
           self.$data.currentRoom = result.room
         })
         socket.on('message', function (message) {

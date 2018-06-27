@@ -105,6 +105,7 @@ socket.emit('all events', { for: 'everyone' }, function (data) {
 1. 要将事件发送给每个用户【包括自身】: socket.emit('all events', { for: 'everyone' });   // 这个是没有通过【监听函数】调用
 2. 要将消息发送给【除发送者自身以外】的所有人: socket.broadcast.emit('hello world'); // 这个是通过【监听函数】调用
 3. 要将消息发送给【除发送者自身以外】的所有人: socket.broadcast.send('hello world'); // 这个是通过【监听函数】调用
+4. 要将消息广播到指定房间：socket.broadcast.to(room).emit(event', opts)
 
 # 关于房间
 ## 加入房间

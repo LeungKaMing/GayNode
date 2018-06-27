@@ -51,8 +51,8 @@ const server = http.createServer((req, res) => {
     
 })
 
-server.listen(8080, () => {
-  console.log('监听8080端口')
+server.listen(8081, () => {
+  console.log('监听8081端口')
 })
 
 // chat_server
