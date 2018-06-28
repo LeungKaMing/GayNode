@@ -113,7 +113,7 @@ function handleMessageBroadcasting (socket, nickNames) {
   })
 }
 
-// 5. 处理加入房间
+// 5. 处理加入房间  ok
 function handleRoomJoining (socket) {
   socket.on('join', (room) => {
     socket.leave(currentRoom[socket.id])  // 离开当前房间
@@ -123,10 +123,13 @@ function handleRoomJoining (socket) {
 
 // 6. 断开连接
 function handleClientDisconnection (socket, nickNames, namesUsed) {
-  socket.on('disconnect', () => {
-    const nameIndex = namesUsed.indexOf(nickNames[socket.id]) // 通过当前用户昵称去曾用名数组中，查找对应对象项的索引，然后删除相关项
+  socket.on('disconnect', (room) => {
+    const nameIndex = namesUsed.indexOf(nickNames[socket.id].name) // 通过当前用户昵称去曾用名数组中，查找对应对象项的索引，然后删除相关项
     delete namesUsed[nameIndex]
-    delete nickNames[socket.id]
+    delete nickNames[socket.id].name
+    socket.emit('message', {
+      text: `${nickNames[socket.id].name} has left ${room}`
+    })
   })
 }
 
@@ -142,9 +145,9 @@ exports.listen = function (server, req) {
     handleNameChangeAttempts(socket, nickNames, namesUsed)
     handleRoomJoining(socket)
     
-    socket.on('rooms', () => {  // 用户发出请求【查询房间】时，向其提供已经被占用的聊天室列表
-      socket.emit('rooms', io.sockets.manager.rooms)
-    })
+    // socket.on('rooms', () => {  // 用户发出请求【查询房间】时，向其提供已经被占用的聊天室列表
+    //   socket.emit('rooms', io.sockets.manager.rooms)
+    // })
 
     handleClientDisconnection(socket, nickNames, namesUsed) // 用户断开连接
   })
