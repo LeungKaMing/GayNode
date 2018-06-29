@@ -143,6 +143,17 @@ function handleClientDisconnection (socket, nickNames, namesUsed) {
   })
 }
 
+function handleAskRooms (socket, roomList) {
+  const list = []
+  socket.on('rooms', () => {  // 用户发出请求【查询房间】时，向其提供已经被占用的聊天室列表
+    // socket.emit('rooms', roomList)
+    for (let key in roomList) {
+      list.push(roomList[key])
+    }
+    socket.emit('rooms', Array.from(new Set(list)))
+  })
+}
+
 exports.listen = function (server, req) {
   io = socketIO.listen(server)  // 将传入来的server再次封装，实则为将socketIO服务器搭载在server上
   // io.set('log level', 1)
@@ -155,9 +166,7 @@ exports.listen = function (server, req) {
     handleNameChangeAttempts(socket, nickNames, namesUsed)
     handleRoomJoining(socket)
     
-    // socket.on('rooms', () => {  // 用户发出请求【查询房间】时，向其提供已经被占用的聊天室列表
-    //   socket.emit('rooms', io.sockets.manager.rooms)
-    // })
+    handleAskRooms(socket, currentRoom)
 
     handleClientDisconnection(socket, nickNames, namesUsed) // 用户断开连接
   })
