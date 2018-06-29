@@ -121,15 +121,25 @@ function handleRoomJoining (socket) {
   })
 }
 
-// 6. 断开连接
+// 6. 断开连接 ok
 function handleClientDisconnection (socket, nickNames, namesUsed) {
-  socket.on('disconnect', (room) => {
+  socket.on('leaveRoom', () => {
     const nameIndex = namesUsed.indexOf(nickNames[socket.id].name) // 通过当前用户昵称去曾用名数组中，查找对应对象项的索引，然后删除相关项
+
+    // 广播除自身以外的人能看到
+    socket.broadcast.to(currentRoom[socket.id]).emit('message', {
+      text: `${nickNames[socket.id].name}已断开连接`
+    })
+    // 广播自身能看到
+    socket.emit('message', {
+      text: `${nickNames[socket.id].name}已断开连接`
+    })
+
     delete namesUsed[nameIndex]
     delete nickNames[socket.id].name
-    socket.emit('message', {
-      text: `${nickNames[socket.id].name} has left ${room}`
-    })
+
+    socket.leave(currentRoom[socket.id])  // 离开当前房间
+    socket.disconnect(true)
   })
 }
 
