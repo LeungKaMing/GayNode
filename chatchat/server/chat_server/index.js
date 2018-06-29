@@ -7,9 +7,8 @@ let nickNames = {}  // 昵称
 let namesUsed = []  // 曾用名
 let currentRoom = {}  // 当前房间
 
-// 1. 分配访客名  ok
 /**
- * 
+ * 1. 分配访客名  ok
  * @param {*} socket 
  * @param {*} guestNumber 
  * @param {*} nickNames 
@@ -28,7 +27,11 @@ function assignGuestName (socket, guestNumber, nickNames, namesUsed) {
   return guestNumber + 1  // 累加当前访客数
 }
 
-// 2. 加入房间  ok
+/**
+ * 2. 加入房间  ok
+ * @param {*} socket 
+ * @param {*} room 
+ */
 function joinRoom (socket, room) {
   socket.join(room) // 当前会话加入某个房间
   socket.emit('joinResult', {
@@ -62,6 +65,9 @@ function joinRoom (socket, room) {
  * 3. 处理用户改名需求 ok
  * - 用户不能改成以Guest_开头的
  * - 用户不能改成跟已有昵称重复的
+ * @param {*} socket 
+ * @param {*} nickNames 
+ * @param {*} namesUsed 
  */
 function handleNameChangeAttempts (socket, nickNames, namesUsed) {
   socket.on('nameAttempt', (name) => {
@@ -99,7 +105,11 @@ function handleNameChangeAttempts (socket, nickNames, namesUsed) {
   })
 }
 
-// 4. 统一处理用户发送的信息 ok
+/*
+ * 4. 统一处理用户发送的信息 ok
+ * @param {*} socket 
+ * @param {*} nickNames 
+ */
 function handleMessageBroadcasting (socket, nickNames) {
   socket.on('sendSMS', (message) => {
     // 广播除自身以外的人能看到
@@ -113,7 +123,10 @@ function handleMessageBroadcasting (socket, nickNames) {
   })
 }
 
-// 5. 处理加入房间  ok
+/*
+ * 5. 处理加入房间  ok
+ * @param {*} socket 
+ */
 function handleRoomJoining (socket) {
   socket.on('join', (room) => {
     socket.leave(currentRoom[socket.id])  // 离开当前房间
@@ -121,7 +134,12 @@ function handleRoomJoining (socket) {
   })
 }
 
-// 6. 断开连接 ok
+/*
+ * 6. 断开连接 ok
+ * @param {*} socket 
+ * @param {*} nickNames 
+ * @param {*} namesUsed 
+ */
 function handleClientDisconnection (socket, nickNames, namesUsed) {
   socket.on('leaveRoom', () => {
     const nameIndex = namesUsed.indexOf(nickNames[socket.id].name) // 通过当前用户昵称去曾用名数组中，查找对应对象项的索引，然后删除相关项
