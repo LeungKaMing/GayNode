@@ -15,7 +15,8 @@ let currentRoom = {}  // 当前房间
  * @param {*} namesUsed 
  */
 function assignGuestName (socket, guestNumber, nickNames, namesUsed) {
-  let name = `Guest_${guestNumber}`
+  // let name = `Guest_${guestNumber}`
+  guestNumber % 2 === 0 ? name = `蝙蝠侠${guestNumber}` : name = `超人${guestNumber}`
   nickNames[socket.id] = {
     name
   }
@@ -36,15 +37,17 @@ function joinRoom (socket, room) {
   socket.join(room) // 当前会话加入某个房间
   socket.emit('joinResult', {
     room
-  })  // 告知监听'joinResult'的事件当前用户进入了某个房间
+  })
 
   currentRoom[socket.id] = room // 每个socketId都有其对应的房间
-
   socket.emit('message', {
     text: `${nickNames[socket.id].name} has joined ${room}`
   })
+  socket.broadcast.to(room).emit('message', {
+    text: `${nickNames[socket.id].name} has joined ${room}`
+  })
 
-  let usersInRoomSummary = `Users currently in room: ${nickNames[socket.id].name}`
+  let usersInRoomSummary = `Users currently in room(排名不分先后): ${nickNames[socket.id].name}`
   io.in(room).clients((err, clients) => {
     clients.map((perClientSocketID) => {
       if ((perClientSocketID !== socket.id) && (nickNames[perClientSocketID].name !== nickNames[socket.id].name)) {
@@ -54,8 +57,10 @@ function joinRoom (socket, room) {
         usersInRoomSummary += nickNames[perClientSocketID].name
       }
     })
-    usersInRoomSummary += '.'
     socket.emit('message', {
+      text: usersInRoomSummary
+    })
+    socket.broadcast.to(room).emit('message', {
       text: usersInRoomSummary
     })
   })
@@ -92,7 +97,7 @@ function handleNameChangeAttempts (socket, nickNames, namesUsed) {
           name
         })
         socket.broadcast.to(currentRoom[socket.id]).emit('message', {
-          text: `${oldName} is now known as ${name}.`
+          text: `${oldName} is now known as ${name}`
         })
       } else {
         // 已经存在在曾用名列表中
@@ -161,6 +166,11 @@ function handleClientDisconnection (socket, nickNames, namesUsed) {
   })
 }
 
+/**
+ * 7. 请求房间 ok
+ * @param {*} socket 
+ * @param {*} roomList 
+ */
 function handleAskRooms (socket, roomList) {
   const list = []
   socket.on('rooms', () => {  // 用户发出请求【查询房间】时，向其提供已经被占用的聊天室列表
