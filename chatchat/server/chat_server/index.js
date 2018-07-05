@@ -119,10 +119,12 @@ function handleMessageBroadcasting (socket, nickNames) {
   socket.on('sendSMS', (message) => {
     // 广播除自身以外的人能看到
     socket.broadcast.to(message.room).emit('message', {
+      type: 'user',
       text: `${nickNames[socket.id].name}: ${message.text}`
     })
     // 广播自身能看到
     socket.emit('message', {
+      type: 'user',
       text: `${nickNames[socket.id].name}: ${message.text}`
     })
   })
