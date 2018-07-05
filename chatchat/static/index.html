@@ -2,49 +2,130 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Document</title>
+  <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons' rel="stylesheet">
+  <link href="https://unpkg.com/vuetify/dist/vuetify.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+  <title>简易聊天室</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <div id="app">
-    <div id="content">
-      <div class="chat_with">
-        {{currentUser}},
-        in {{currentRoom}}
-      </div>
-      <pre class="chat_content">
-        {{chatContent.join()}}
-      </pre>
-    </div>
-    <div id="user_input">
-      <input type="text" placeholder="请输入..." v-model="userInput" />
-      <button @click="submit">发送</button>
-    </div>
-    <div id="sidebar">
-      房间列表：
-      <ul v-for="room in roomList">
-        <li @click="chooseRoom(room)">{{room}}</li>
-      </ul>
-    </div>
+    <v-app>
+        <v-navigation-drawer
+        v-model="drawer"
+        fixed
+        clipped
+        app
+      >
+        <v-list dense>
+          <v-list-tile v-for="item in items" :key="item.text" @click="">
+            <v-list-tile-action>
+              <v-icon>{{ item.icon }}</v-icon>
+            </v-list-tile-action>
+            <v-list-tile-content>
+              <v-list-tile-title>
+                {{ item.text }}
+              </v-list-tile-title>
+            </v-list-tile-content>
+          </v-list-tile>
+          <v-subheader class="mt-3 grey--text text--darken-1">SUBSCRIPTIONS</v-subheader>
+          <v-list>
+            <v-list-tile v-for="item in items2" :key="item.text" avatar @click="">
+              <v-list-tile-avatar>
+                <img :src="`https://randomuser.me/api/portraits/men/${item.picture}.jpg`" alt="">
+              </v-list-tile-avatar>
+              <v-list-tile-title v-text="item.text"></v-list-tile-title>
+            </v-list-tile>
+          </v-list>
+          <v-list-tile class="mt-3" @click="">
+            <v-list-tile-action>
+              <v-icon color="grey darken-1">add_circle_outline</v-icon>
+            </v-list-tile-action>
+            <v-list-tile-title class="grey--text text--darken-1">Browse Channels</v-list-tile-title>
+          </v-list-tile>
+          <v-list-tile @click="">
+            <v-list-tile-action>
+              <v-icon color="grey darken-1">settings</v-icon>
+            </v-list-tile-action>
+            <v-list-tile-title class="grey--text text--darken-1">Manage Subscriptions</v-list-tile-title>
+          </v-list-tile>
+        </v-list>
+      </v-navigation-drawer>
+      <v-toolbar
+        color="red"
+        dense
+        fixed
+        clipped-left
+        app
+      >
+          <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
+          <v-toolbar-title class="mr-5 align-center">
+            <span class="title">聊天室</span>
+          </v-toolbar-title>
+        </v-toolbar>
+        <v-content>
+          <v-container fluid>
+            <v-layout>
+              <pre>
+                {{tipContent.join()}}
+              </pre>
+            </v-layout>
+            <v-layout>
+                <pre>
+                  {{meChatContent.join()}}
+                </pre>
+            </v-layout>
+            <v-layout>
+              <v-flex xs7 offset-xs5>
+                <v-card dark color="purple">
+                  <v-card-text>我的方向</v-card-text>
+                </v-card>
+              </v-flex>
+            </v-layout>
+          </v-container>
+        </v-content>
+        <v-footer app>
+          <div id="user_input">
+            <input type="text" placeholder="请输入..." v-model="userInput" />
+            <button @click="submit">发送</button>
+          </div>
+        </v-footer>
+      </v-app>
   </div>
 </body>
 <script src="https://cdn.bootcss.com/socket.io/2.1.1/socket.io.slim.js"></script>
 <script src="https://cdn.bootcss.com/vue/2.5.16/vue.min.js"></script>
 <script src="https://cdn.bootcss.com/axios/0.18.0/axios.min.js"></script>
+<script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
 <script>
-  var socket = io.connect('http://127.0.0.1:8081')  // 因为nodejs跟websocket服务绑定在了一起，共用一个端口
+  var socket = io.connect('http://10.202.0.172:8081')  // 因为nodejs跟websocket服务绑定在了一起，共用一个端口
   // console.log(socket)
-  var vm = new Vue({
+  new Vue({
     el: '#app',
     data () {
       return {
-        defaultRoom: 'Guest',
+        drawer: true,
+        items: [
+          { icon: 'trending_up', text: 'Most Popular' },
+          { icon: 'subscriptions', text: 'Subscriptions' },
+          { icon: 'history', text: 'History' },
+          { icon: 'featured_play_list', text: 'Playlists' },
+          { icon: 'watch_later', text: 'Watch Later' }
+        ],
+        items2: [
+          { picture: 28, text: 'Joseph' },
+          { picture: 38, text: 'Apple' },
+          { picture: 48, text: 'Xbox Ahoy' },
+          { picture: 58, text: 'Nokia' },
+          { picture: 78, text: 'MKBHD' }
+        ],
         currentRoom: 'Guest',
         roomList: ['Guest'],  // 用户列表
         currentUser: 'admin',  // 当前用户
-        chatContent: ['\nwelcome to chatroom beta version'], // 聊天内容
+        tipContent: ['\nwelcome to chatroom beta version'], // 提示内容
+        meChatContent: [], // 我的聊天内容
+        otherChatContent: [], // 其他人的聊天内容
         userInput: '' // 用户输入
       }
     },
@@ -64,23 +145,36 @@
       initSocket () {
         var self = this
         socket.on('nameResult', function (result) {
-          console.log('改名成功：', result)
           var message
           if (result.success) {
-            message = `You are now know as ${result.name}.`
+            message = `You are now know as ${result.name}`
           } else {
             message = result.message
           }
-          self.$data.chatContent.push(`\n${message}`)
+          self.$data.tipContent.push(`\n${message}`)
         })
         socket.on('joinResult', function (result) {
           self.$data.currentRoom = result.room
         })
         socket.on('message', function (message) {
-          self.$data.chatContent.push(`\n${message.text}`)
+          if (message.type === 'user') {
+            self.$data.meChatContent.push(`\n${message.text}`)
+          } else {
+            self.$data.tipContent.push(`\n${message.text}`)
+          }
         })
+
+        
+        // socket.on('message', function (message) {
+        //   self.$data.meChatContent.push(`\n${message.text}`)
+        // })
+        // socket.on('message', function (message) {
+        //   self.$data.otherChatContent.push(`\n${message.text}`)
+        // })
+        
+        
         socket.on('rooms', function (rooms) {
-          self.$data.currentRoom = ''
+          self.$data.tipContent.push(`\n总共有这些房间被占用：${rooms.toString()}`)
         })
       },
       // 选择房间
@@ -93,7 +187,7 @@
           room: room,
           text: text
         }
-        socket.emit('message', message)
+        socket.emit('sendSMS', message)
       },
       // 改变房间
       changeRoom (room) {
@@ -117,6 +211,10 @@
             var name = words.join(' ')
             socket.emit('nameAttempt', name)
             break
+          case 'leave':
+            socket.emit('leaveRoom')
+          case 'rooms':
+            socket.emit('rooms')
           default:
             message = '未知命令'
             break
@@ -130,7 +228,7 @@
           this.processCMD(userInput)
         } else {
           // 无符号则是聊天信息
-          this.sendMessage(this.$data.defaultRoom, userInput)
+          this.sendMessage(this.$data.currentRoom, userInput)
         }
         this.$data.userInput = '' // 提交后输入框清零
       }
