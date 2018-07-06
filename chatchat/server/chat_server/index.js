@@ -117,14 +117,15 @@ function handleNameChangeAttempts (socket, nickNames, namesUsed) {
  */
 function handleMessageBroadcasting (socket, nickNames) {
   socket.on('sendSMS', (message) => {
-    // 广播除自身以外的人能看到
-    socket.broadcast.to(message.room).emit('message', {
-      type: 'user',
-      text: `${nickNames[socket.id].name}: ${message.text}`
-    })
+    // 用来筛选除当前用户外的用户 => 用于排列聊天框的左右位置 20180706
     // 广播自身能看到
     socket.emit('message', {
       type: 'user',
+      text: `${nickNames[socket.id].name}: ${message.text}`
+    })
+    // 广播除自身以外的人能看到
+    socket.broadcast.to(message.room).emit('message', {
+      type: 'other',
       text: `${nickNames[socket.id].name}: ${message.text}`
     })
   })
