@@ -11,8 +11,16 @@
 </head>
 <body>
   <div id="app">
-    <v-app>
-        <v-navigation-drawer
+    <v-alert
+      style="position: absolute; left: 0; right: 0; z-index: 9;"
+      v-model="alert"
+      dismissible
+      type="success"
+    >
+      This is a success alert that is closable.
+    </v-alert>
+    <v-app v-cloak app>
+      <v-navigation-drawer
         v-model="drawer"
         fixed
         clipped
@@ -59,39 +67,30 @@
         clipped-left
         app
       >
-          <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
-          <v-toolbar-title class="mr-5 align-center">
-            <span class="title">聊天室</span>
-          </v-toolbar-title>
-        </v-toolbar>
-        <v-content>
-          <v-container fluid>
-            <v-layout>
-              <pre>
-                {{tipContent.join()}}
-              </pre>
-            </v-layout>
-            <v-layout>
-                <pre>
-                  {{meChatContent.join()}}
-                </pre>
-            </v-layout>
-            <v-layout>
-              <v-flex xs7 offset-xs5>
-                <v-card dark color="purple">
-                  <v-card-text>我的方向</v-card-text>
-                </v-card>
-              </v-flex>
-            </v-layout>
-          </v-container>
-        </v-content>
-        <v-footer app>
-          <div id="user_input">
-            <input type="text" placeholder="请输入..." v-model="userInput" />
-            <button @click="submit">发送</button>
-          </div>
-        </v-footer>
-      </v-app>
+        <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
+        <v-toolbar-title class="mr-5 align-center">
+          <span class="title">聊天室</span>
+        </v-toolbar-title>
+      </v-toolbar>
+      <v-content>
+        <v-container fluid>
+          <v-layout>
+            <!-- 顶部提示 -->
+            <pre>
+              {{tipContent.join()}}
+            </pre>
+          </v-layout>
+          <!-- 重新实现你我对话ui -->
+          <div v-html="calDOM"></div>
+        </v-container>
+      </v-content>
+      <v-footer>
+        <div id="user_input">
+          <input type="text" placeholder="请输入..." v-model="userInput" />
+          <button @click="submit">发送</button>
+        </div>
+      </v-footer>
+    </v-app>
   </div>
 </body>
 <script src="https://cdn.bootcss.com/socket.io/2.1.1/socket.io.slim.js"></script>
@@ -103,9 +102,28 @@
   // console.log(socket)
   new Vue({
     el: '#app',
+    computed: {
+      /*
+      * @desc 每次有用户输入都去计算需要渲染出来的dom => 用数组方式把自己和别人的都统一起来
+      * @return 返回一个dom组成的字符串给v-html渲染
+      */
+      calDOM () {
+        let dom = []
+        this.totalContent.map((content) => {
+          if (content.type === 'me') {
+            dom.push(`<p style="float: right;color: red;clear: both;">${content.text}</p>`)
+          } else {
+            dom.push(`<p style="float: left;color: purple;clear: both;">${content.text}</p>`)
+          }
+        })
+        return dom.join().replace(/,/g, '')
+      }
+    },
     data () {
       return {
+        totalContent: [],
         drawer: true,
+        alert: true,
         items: [
           { icon: 'trending_up', text: 'Most Popular' },
           { icon: 'subscriptions', text: 'Subscriptions' },
@@ -144,6 +162,7 @@
       // 初始化socketIO
       initSocket () {
         var self = this
+        // 监听名字改动请求
         socket.on('nameResult', function (result) {
           var message
           if (result.success) {
@@ -153,26 +172,32 @@
           }
           self.$data.tipContent.push(`\n${message}`)
         })
+
+        // 监听加入房间请求
         socket.on('joinResult', function (result) {
           self.$data.currentRoom = result.room
         })
+
+        // 监听消息请求
         socket.on('message', function (message) {
           if (message.type === 'user') {
             self.$data.meChatContent.push(`\n${message.text}`)
+            self.$data.totalContent.push({
+              type: 'me',
+              text: `\n${message.text}`
+            })
+          } else if (message.type === 'other') {
+            self.$data.otherChatContent.push(`\n${message.text}`)
+            self.$data.totalContent.push({
+              type: 'other',
+              text: `\n${message.text}`
+            })
           } else {
             self.$data.tipContent.push(`\n${message.text}`)
           }
-        })
-
+        })        
         
-        // socket.on('message', function (message) {
-        //   self.$data.meChatContent.push(`\n${message.text}`)
-        // })
-        // socket.on('message', function (message) {
-        //   self.$data.otherChatContent.push(`\n${message.text}`)
-        // })
-        
-        
+        // 监听查询房间请求
         socket.on('rooms', function (rooms) {
           self.$data.tipContent.push(`\n总共有这些房间被占用：${rooms.toString()}`)
         })
