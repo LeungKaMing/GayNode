@@ -23,7 +23,7 @@ function assignGuestName (socket, guestNumber, nickNames, namesUsed) {
   socket.emit('nameResult', {
     success: true,
     name
-  })  // 告知监听'nameResult'的事件已分配的名字
+  })
   namesUsed.push(name) // 将当前分配昵称存进曾用名数组 => 改名时不能跟这个数组内的名字重复
   return guestNumber + 1  // 累加当前访客数
 }
@@ -120,7 +120,7 @@ function handleMessageBroadcasting (socket, nickNames) {
     // 用来筛选除当前用户外的用户 => 用于排列聊天框的左右位置 20180706
     // 广播自身能看到
     socket.emit('message', {
-      type: 'user',
+      type: 'me',
       text: `${nickNames[socket.id].name}: ${message.text}`
     })
     // 广播除自身以外的人能看到
@@ -176,12 +176,25 @@ function handleClientDisconnection (socket, nickNames, namesUsed) {
  */
 function handleAskRooms (socket, roomList) {
   const list = []
-  socket.on('rooms', () => {  // 用户发出请求【查询房间】时，向其提供已经被占用的聊天室列表
+  socket.on('getRoomsList', () => {  // 用户发出请求【查询房间】时，向其提供已经被占用的聊天室列表
     // socket.emit('rooms', roomList)
     for (let key in roomList) {
       list.push(roomList[key])
     }
-    socket.emit('rooms', Array.from(new Set(list)))
+    socket.emit('setRoomsList', Array.from(new Set(list)))
+  })
+}
+
+/**
+ * 8. 请求房间人数 0711 20:40
+ */
+function queryUsersInRoom (socket) {
+  socket.on('queryUsers', () => {
+    io.in(room).clients((err, clients) => {
+      socket.emit('setUsers', {
+        usersNumber: clients.length
+      })
+    })
   })
 }
 
@@ -198,6 +211,8 @@ exports.listen = function (server, req) {
     handleRoomJoining(socket)
     
     handleAskRooms(socket, currentRoom)
+
+    queryUsersInRoom(socket)
 
     handleClientDisconnection(socket, nickNames, namesUsed) // 用户断开连接
   })
