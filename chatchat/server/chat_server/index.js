@@ -189,7 +189,7 @@ function handleAskRooms (socket, roomList) {
  * 8. 请求房间人数 0711 20:40
  */
 function queryUsersInRoom (socket) {
-  socket.on('queryUsers', () => {
+  socket.on('getUsers', () => {
     io.in(room).clients((err, clients) => {
       socket.emit('setUsers', {
         usersNumber: clients.length
