@@ -186,9 +186,9 @@ function handleAskRooms (socket, roomList) {
 }
 
 /**
- * 8. 请求房间人数 0711 20:40
+ * 8. 请求房间人数
  */
-function queryUsersInRoom (socket) {
+function handleQueryUsersInRoom (socket) {
   socket.on('getUsers', () => {
     io.in(room).clients((err, clients) => {
       socket.emit('setUsers', {
@@ -212,7 +212,7 @@ exports.listen = function (server, req) {
     
     handleAskRooms(socket, currentRoom)
 
-    queryUsersInRoom(socket)
+    handleQueryUsersInRoom(socket)
 
     handleClientDisconnection(socket, nickNames, namesUsed) // 用户断开连接
   })
